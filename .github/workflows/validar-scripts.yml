@@ -29,6 +29,9 @@ jobs:
           done < <(find . -type f -name '*.sh' \
             -not -path './.git/*' -print0)
 
+      - name: Validar configuración del proyecto
+        run: bash -n configuracion/proyecto.conf
+
       - name: Analizar scripts con ShellCheck
         run: |
           find . -type f -name '*.sh' \
