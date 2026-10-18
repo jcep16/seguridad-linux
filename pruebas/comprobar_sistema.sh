@@ -4,8 +4,7 @@ echo "=== Comprobación del sistema ==="
 echo "Fecha: $(date)"
 echo "Usuario actual: $(whoami)"
 echo "Sistema operativo:"
-cat /etc/os-release | grep PRETTY_NAME
-
+grep PRETTY_NAME /etc/os-release
 if [ "$EUID" -eq 0 ]; then
     echo "Privilegios: administrador (root)"
 else
