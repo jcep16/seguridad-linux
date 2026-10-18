@@ -101,7 +101,16 @@ Después, crear una nueva rama para el siguiente cambio.
 
 ## 11. Validación automática
 
-GitHub Actions comprueba la sintaxis de los scripts Bash y ejecuta ShellCheck al realizar cambios en `main` o abrir Pull Requests hacia esa rama.
+GitHub Actions ejecuta las siguientes comprobaciones en los cambios
+dirigidos a la rama `main` mediante los eventos configurados:
 
-Una validación correcta no sustituye las pruebas prácticas de seguridad ni demuestra por sí sola que una configuración sea segura.
+- Comprueba la sintaxis de los scripts Bash.
+- Valida la sintaxis de `configuracion/proyecto.conf`.
+- Comprueba que existan los directorios esenciales del proyecto.
+- Analiza los scripts Bash con ShellCheck.
 
+La rama `main` está protegida: los cambios deben integrarse mediante
+Pull Requests y la comprobación obligatoria `validar-bash` debe pasar.
+
+Una validación correcta no sustituye las pruebas prácticas de seguridad
+ni demuestra por sí sola que una configuración sea segura.
