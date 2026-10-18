@@ -1,0 +1,36 @@
+name: Validar scripts Bash
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  validar-bash:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Descargar repositorio
+        uses: actions/checkout@v4
+
+      - name: Instalar ShellCheck
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y shellcheck
+
+      - name: Validar sintaxis Bash
+        shell: bash
+        run: |
+          set -e
+          while IFS= read -r -d '' archivo; do
+            echo "Validando: $archivo"
+            bash -n "$archivo"
+          done < <(find . -type f -name '*.sh' \
+            -not -path './.git/*' -print0)
+
+      - name: Analizar scripts con ShellCheck
+        run: |
+          find . -type f -name '*.sh' \
+            -not -path './.git/*' \
+            -print0 | xargs -0 -r shellcheck
