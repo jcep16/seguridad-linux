@@ -1,11 +1,24 @@
+
 #!/usr/bin/env bash
 
 set -uo pipefail
 
 errores=0
 
+# Cargar requisitos comunes
+CONFIGURACION="configuracion/dependencias.conf"
+
+if [[ ! -f "$CONFIGURACION" ]]; then
+    echo "[ERROR] No existe $CONFIGURACION"
+    exit 1
+fi
+
+# El archivo debe contener únicamente variables y arrays de configuración.
+# shellcheck source=/dev/null
+source "$CONFIGURACION"
+
 echo "======================================"
-echo "Comprobación del entorno Seguridad 1"
+echo " Comprobación del entorno Seguridad 1"
 echo "======================================"
 echo
 
@@ -14,24 +27,30 @@ echo "=== Sistema operativo ==="
 
 if [[ -r /etc/os-release ]]; then
     ID_SISTEMA=""
+    VERSION_SISTEMA=""
+    NOMBRE_SISTEMA="desconocido"
 
     while IFS='=' read -r clave valor; do
         case "$clave" in
-            ID)
-                ID_SISTEMA="${valor//\"/}"
-                ;;
-            PRETTY_NAME)
-                NOMBRE_SISTEMA="${valor//\"/}"
-                ;;
+            ID) ID_SISTEMA="${valor//\"/}" ;;
+            VERSION_ID) VERSION_SISTEMA="${valor//\"/}" ;;
+            PRETTY_NAME) NOMBRE_SISTEMA="${valor//\"/}" ;;
         esac
     done < /etc/os-release
 
-    echo "Sistema: ${NOMBRE_SISTEMA:-desconocido}"
+    echo "Sistema detectado: $NOMBRE_SISTEMA"
 
-    if [[ "$ID_SISTEMA" == "ubuntu" ]]; then
-        echo "[OK] Sistema basado en Ubuntu"
+    if [[ "$ID_SISTEMA" == "$SISTEMA_ID" ]]; then
+        echo "[OK] Distribución: $SISTEMA_ID"
     else
-        echo "[ERROR] Se requiere Ubuntu"
+        echo "[ERROR] Se esperaba $SISTEMA_ID"
+        errores=$((errores + 1))
+    fi
+
+    if [[ "$VERSION_SISTEMA" == "$SISTEMA_VERSION" ]]; then
+        echo "[OK] Versión: $SISTEMA_VERSION"
+    else
+        echo "[ERROR] Se esperaba la versión $SISTEMA_VERSION"
         errores=$((errores + 1))
     fi
 else
@@ -45,18 +64,18 @@ echo "=== Arquitectura ==="
 
 arquitectura=$(dpkg --print-architecture)
 
-if [[ "$arquitectura" == "amd64" ]]; then
+if [[ "$arquitectura" == "$ARQUITECTURA" ]]; then
     echo "[OK] Arquitectura: $arquitectura"
 else
-    echo "[ERROR] Se requiere amd64; detectada: $arquitectura"
+    echo "[ERROR] Se esperaba $ARQUITECTURA; detectada: $arquitectura"
     errores=$((errores + 1))
 fi
 
-# 3. Herramientas básicas
+# 3. Herramientas base
 echo
-echo "=== Herramientas ==="
+echo "=== Herramientas base ==="
 
-for herramienta in bash git python3; do
+for herramienta in "${HERRAMIENTAS_BASE[@]}"; do
     if command -v "$herramienta" >/dev/null 2>&1; then
         echo "[OK] $herramienta está disponible"
     else
@@ -65,17 +84,27 @@ for herramienta in bash git python3; do
     fi
 done
 
-# 4. Recursos disponibles
+# 4. Componentes de seguridad: solo inventario, no instalación
+echo
+echo "=== Estado de paquetes de seguridad ==="
+
+for paquete in "${COMPONENTES_SEGURIDAD[@]}"; do
+    if dpkg-query -W -f='${Status}' "$paquete" 2>/dev/null |
+        grep -q "install ok installed"; then
+        echo "[INSTALADO] $paquete"
+    else
+        echo "[PENDIENTE] $paquete"
+    fi
+done
+
+# 5. Recursos disponibles
 echo
 echo "=== Recursos ==="
-echo "Memoria disponible:"
 free -h
-
 echo
-echo "Espacio disponible en la raíz:"
 df -h /
 
-# 5. Resultado
+# 6. Resultado
 echo
 echo "======================================"
 
