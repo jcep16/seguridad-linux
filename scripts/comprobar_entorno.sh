@@ -4,17 +4,8 @@ set -uo pipefail
 
 errores=0
 
-comprobar() {
-    if "$@"; then
-        return 0
-    else
-        errores=$((errores + 1))
-        return 0
-    fi
-}
-
 echo "======================================"
-echo " Comprobación del entorno Seguridad 1"
+echo "Comprobación del entorno Seguridad 1"
 echo "======================================"
 echo
 
@@ -22,10 +13,22 @@ echo
 echo "=== Sistema operativo ==="
 
 if [[ -r /etc/os-release ]]; then
-    . /etc/os-release
-    echo "Sistema: ${PRETTY_NAME:-desconocido}"
+    ID_SISTEMA=""
 
-    if [[ "${ID:-}" == "ubuntu" ]]; then
+    while IFS='=' read -r clave valor; do
+        case "$clave" in
+            ID)
+                ID_SISTEMA="${valor//\"/}"
+                ;;
+            PRETTY_NAME)
+                NOMBRE_SISTEMA="${valor//\"/}"
+                ;;
+        esac
+    done < /etc/os-release
+
+    echo "Sistema: ${NOMBRE_SISTEMA:-desconocido}"
+
+    if [[ "$ID_SISTEMA" == "ubuntu" ]]; then
         echo "[OK] Sistema basado en Ubuntu"
     else
         echo "[ERROR] Se requiere Ubuntu"
@@ -35,6 +38,7 @@ else
     echo "[ERROR] No se encuentra /etc/os-release"
     errores=$((errores + 1))
 fi
+
 # 2. Arquitectura
 echo
 echo "=== Arquitectura ==="
