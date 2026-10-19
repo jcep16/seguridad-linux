@@ -47,11 +47,15 @@ if [[ -r /etc/os-release ]]; then
         errores=$((errores + 1))
     fi
 
-    if [[ "$VERSION_SISTEMA" == "$SISTEMA_VERSION" ]]; then
-        echo "[OK] Versión: $SISTEMA_VERSION"
+    if [[ "${1:-}" == "--ci" ]]; then
+        echo "[INFO] Modo CI: se acepta cualquier versión de Ubuntu"
     else
-        echo "[ERROR] Se esperaba la versión $SISTEMA_VERSION"
-        errores=$((errores + 1))
+        if [[ "$VERSION_SISTEMA" == "$SISTEMA_VERSION" ]]; then
+            echo "[OK] Versión: $SISTEMA_VERSION"
+        else
+            echo "[ERROR] Se esperaba la versión $SISTEMA_VERSION"
+            errores=$((errores + 1))
+        fi
     fi
 else
     echo "[ERROR] No se encuentra /etc/os-release"
