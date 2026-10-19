@@ -1,4 +1,5 @@
-name: Validar scripts Bash
+
+name: Validar proyecto Seguridad 1
 
 on:
   push:
@@ -31,6 +32,12 @@ jobs:
 
       - name: Validar configuración del proyecto
         run: bash -n configuracion/proyecto.conf
+
+      - name: Validar estructura del proyecto
+        run: bash pruebas/comprobar_estructura.sh
+
+      - name: Comprobar entorno de referencia
+        run: bash scripts/comprobar_entorno.sh
 
       - name: Analizar scripts con ShellCheck
         run: |
