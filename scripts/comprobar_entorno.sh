@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 
 set -uo pipefail
@@ -68,6 +67,7 @@ echo "=== Arquitectura ==="
 
 arquitectura=$(dpkg --print-architecture)
 
+# shellcheck disable=SC2153
 if [[ "$arquitectura" == "$ARQUITECTURA" ]]; then
     echo "[OK] Arquitectura: $arquitectura"
 else
