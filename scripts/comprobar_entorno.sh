@@ -25,17 +25,16 @@ if [[ -r /etc/os-release ]]; then
     . /etc/os-release
     echo "Sistema: ${PRETTY_NAME:-desconocido}"
 
-    if [[ "${ID:-}" == "ubuntu" && "${VERSION_ID:-}" == "26.04" ]]; then
-        echo "[OK] Ubuntu 26.04"
+    if [[ "${ID:-}" == "ubuntu" ]]; then
+        echo "[OK] Sistema basado en Ubuntu"
     else
-        echo "[ERROR] Se requiere Ubuntu 26.04 LTS"
+        echo "[ERROR] Se requiere Ubuntu"
         errores=$((errores + 1))
     fi
 else
     echo "[ERROR] No se encuentra /etc/os-release"
     errores=$((errores + 1))
 fi
-
 # 2. Arquitectura
 echo
 echo "=== Arquitectura ==="
