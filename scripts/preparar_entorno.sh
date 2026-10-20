@@ -71,7 +71,7 @@ if [[ "$ID_SISTEMA" != "$SISTEMA_ID" ]]; then
     exit 1
 fi
 
-if [[ "${1:-}" == "--ci" ]]; then
+if [[ "$MODO_CI" == true ]]; then
     echo "[OK] Modo CI: se permite Ubuntu $VERSION_SISTEMA"
 elif [[ "$VERSION_SISTEMA" != "$SISTEMA_VERSION" ]]; then
     echo "[ERROR] Se requiere $SISTEMA_ID $SISTEMA_VERSION."
@@ -87,6 +87,7 @@ fi
 
 arquitectura=$(dpkg --print-architecture)
 
+# shellcheck disable=SC2153
 if [[ "$arquitectura" != "$ARQUITECTURA" ]]; then
     echo "[ERROR] Se requiere arquitectura $ARQUITECTURA."
     echo "Arquitectura detectada: $arquitectura"
