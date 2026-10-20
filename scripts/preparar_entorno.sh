@@ -25,7 +25,24 @@ echo "======================================"
 echo " Preparación del entorno Seguridad 1"
 echo "======================================"
 echo
+# Procesar opciones de ejecución.
+MODO_CI=false
+SOLO_COMPROBAR=false
 
+for argumento in "$@"; do
+    case "$argumento" in
+        --ci)
+            MODO_CI=true
+            ;;
+        --check-only)
+            SOLO_COMPROBAR=true
+            ;;
+        *)
+            echo "[ERROR] Opción desconocida: $argumento"
+            exit 2
+            ;;
+    esac
+done
 # 1. Comprobar los datos del sistema operativo.
 if [[ ! -r /etc/os-release ]]; then
     echo "[ERROR] No se encuentra /etc/os-release"
@@ -106,12 +123,11 @@ echo "Herramientas ausentes: ${faltantes[*]}"
 echo "No se instalarán componentes de las prácticas."
 
 # 5. Modo de comprobación: nunca instala ni solicita confirmación.
-if [[ "${1:-}" == "--check-only" ]]; then
+if [[ "$SOLO_COMPROBAR" == true ]]; then
     echo "[ERROR] Faltan herramientas base."
     echo "Modo de comprobación: no se instalará nada."
     exit 1
 fi
-
 # 6. Verificar que el gestor de paquetes está disponible.
 if ! command -v apt-get >/dev/null 2>&1; then
     echo "[ERROR] No se encuentra apt-get."

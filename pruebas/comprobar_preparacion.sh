@@ -1,4 +1,3 @@
-
 #!/usr/bin/env bash
 
 set -uo pipefail
@@ -14,7 +13,7 @@ fi
 echo "=== Prueba de preparación del entorno ==="
 
 # Caso 1: herramientas reales disponibles.
-if bash "$SCRIPT" --check-only; then
+if bash "$SCRIPT" --ci --check-only; then
     echo "[OK] El entorno actual pasa la comprobación"
 else
     echo "[ERROR] El entorno actual no pasa la comprobación"
