@@ -88,11 +88,11 @@ for herramienta in "${HERRAMIENTAS_BASE[@]}"; do
     fi
 done
 
-# 4. Componentes de seguridad: solo inventario, no instalación
+# 4. Paquetes de infraestructura
 echo
-echo "=== Estado de paquetes de seguridad ==="
+echo "=== Paquetes de infraestructura ==="
 
-for paquete in "${COMPONENTES_SEGURIDAD[@]}"; do
+for paquete in "${PAQUETES_INFRAESTRUCTURA[@]}"; do
     if dpkg-query -W -f='${Status}' "$paquete" 2>/dev/null |
         grep -q "install ok installed"; then
         echo "[INSTALADO] $paquete"
@@ -100,6 +100,20 @@ for paquete in "${COMPONENTES_SEGURIDAD[@]}"; do
         echo "[PENDIENTE] $paquete"
     fi
 done
+
+# 5. Componentes de las prácticas
+echo
+echo "=== Componentes de las prácticas ==="
+
+for paquete in "${COMPONENTES_PRACTICAS[@]}"; do
+    if dpkg-query -W -f='${Status}' "$paquete" 2>/dev/null |
+        grep -q "install ok installed"; then
+        echo "[INSTALADO] $paquete"
+    else
+        echo "[PENDIENTE] $paquete"
+    fi
+done
+
 
 # 5. Recursos disponibles
 echo
