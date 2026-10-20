@@ -49,12 +49,17 @@ done < /etc/os-release
 
 echo "Sistema detectado: $NOMBRE_SISTEMA"
 
-if [[ "$ID_SISTEMA" != "$SISTEMA_ID" ||
-      "$VERSION_SISTEMA" != "$SISTEMA_VERSION" ]]; then
-    echo "[ERROR] Se requiere $SISTEMA_ID $SISTEMA_VERSION."
+if [[ "$ID_SISTEMA" != "$SISTEMA_ID" ]]; then
+    echo "[ERROR] Se requiere un sistema basado en $SISTEMA_ID."
     exit 1
 fi
 
+if [[ "${1:-}" == "--ci" ]]; then
+    echo "[OK] Modo CI: se permite Ubuntu $VERSION_SISTEMA"
+elif [[ "$VERSION_SISTEMA" != "$SISTEMA_VERSION" ]]; then
+    echo "[ERROR] Se requiere $SISTEMA_ID $SISTEMA_VERSION."
+    exit 1
+fi
 echo "[OK] Sistema operativo compatible"
 
 # 2. Comprobar arquitectura.

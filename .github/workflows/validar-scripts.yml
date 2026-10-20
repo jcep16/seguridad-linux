@@ -40,7 +40,7 @@ jobs:
         run: bash scripts/comprobar_entorno.sh --ci
 
       - name: Comprobar preparación del entorno
-        run: bash scripts/preparar_entorno.sh --check-only
+        run: bash scripts/preparar_entorno.sh --ci --check-only
 
       - name: Probar preparación del entorno
         run: bash pruebas/comprobar_preparacion.sh
