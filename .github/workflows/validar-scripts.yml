@@ -39,6 +39,12 @@ jobs:
       - name: Comprobar entorno de referencia
         run: bash scripts/comprobar_entorno.sh --ci
 
+      - name: Comprobar preparación del entorno
+        run: bash scripts/preparar_entorno.sh --check-only
+
+      - name: Probar preparación del entorno
+        run: bash pruebas/comprobar_preparacion.sh
+
       - name: Analizar scripts con ShellCheck
         run: |
           find . -type f -name '*.sh' \
