@@ -27,7 +27,7 @@ echo "=== Simulación de herramienta ausente ==="
 # Caso 2: simular una herramienta que no existe.
 # La configuración original no se modifica y no se instalan paquetes.
 if HERRAMIENTAS_BASE_PRUEBA="herramienta_inexistente_para_pruebas" \
-    bash "$SCRIPT" --check-only; then
+    bash "$SCRIPT" --ci --check-only; then
     echo "[ERROR] Se esperaba un fallo por herramienta ausente"
     exit 1
 else
