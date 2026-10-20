@@ -45,6 +45,9 @@ jobs:
       - name: Probar preparación del entorno
         run: bash pruebas/comprobar_preparacion.sh
 
+      - name: Probar mecanismo de despliegue
+        run: bash pruebas/comprobar_despliegue.sh
+
       - name: Analizar scripts con ShellCheck
         run: |
           find . -type f -name '*.sh' \
