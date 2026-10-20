@@ -14,6 +14,8 @@ directorios=(
     "scripts"
     "configuracion"
     "documentacion"
+    "despliegue"
+    "despliegue/modulos"
 )
 
 errores=0

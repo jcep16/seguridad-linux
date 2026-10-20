@@ -38,9 +38,14 @@ shopt -s nullglob
 scripts=("$MODULOS"/*.sh)
 
 if (( ${#scripts[@]} == 0 )); then
-    echo "[ERROR] No hay módulos de configuración implementados."
-    echo "Todavía no hay cambios de seguridad que aplicar."
-    exit 1
+    if [[ "$MODO" == "apply" ]]; then
+        echo "[ERROR] No hay módulos de configuración que aplicar."
+        exit 1
+    fi
+
+    echo "[INFO] No hay módulos de configuración implementados."
+    echo "No se modificó el sistema."
+    exit 0
 fi
 
 echo "=== Validación de módulos ==="
