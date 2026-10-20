@@ -1,116 +1,106 @@
-# Guía de colaboración — Seguridad Linux
+# Guía de colaboración y despliegue
 
-## 1. Repositorio
+## 1. Obtener el repositorio
 
-Repositorio oficial: https://github.com/jcep16/seguridad-linux
+Clonar por primera vez:
 
-La rama `main` contiene la versión estable e integrada del proyecto.
+    git clone https://github.com/jcep16/seguridad-linux.git
+    cd seguridad-linux
 
-## 2. Requisitos
+Actualizar una copia existente:
 
-- Git instalado.
-- Acceso autorizado al repositorio.
-- Conexión a Internet.
-- Ubuntu Server como entorno de referencia para las actividades prácticas.
+    git switch main
+    git pull origin main
 
-## 3. Clonar el repositorio
+## 2. Empezar una tarea
 
-Cada integrante debe clonar el proyecto una sola vez:
+Actualizar main antes de crear una rama:
 
-```bash
-git clone https://github.com/jcep16/seguridad-linux.git
-cd seguridad-linux
-```
+    git switch main
+    git pull origin main
+    git switch -c feature/nombre-de-la-tarea
 
-## 4. Actualizar la copia local
+Cada integrante trabaja en su propia copia del repositorio.
+No se deben compartir carpetas .git ni sobrescribir el directorio de
+trabajo de otra persona.
 
-Antes de comenzar a trabajar:
+## 3. Validar los cambios
 
-```bash
-git switch main
-git pull origin main
-```
+Desde la raíz del repositorio:
 
-## 5. Crear una rama de trabajo
+    bash -n scripts/aplicar_configuracion.sh
+    bash pruebas/comprobar_estructura.sh
+    bash pruebas/comprobar_preparacion.sh
+    bash pruebas/comprobar_despliegue.sh
+    git diff --check
 
-Cada tarea debe desarrollarse en una rama independiente. Ejemplo:
+Los scripts nuevos también deben pasar las comprobaciones de
+GitHub Actions y ShellCheck.
 
-```bash
-git switch -c feature/nombre-tarea
-```
+## 4. Publicar una tarea
 
-Se debe utilizar un nombre descriptivo para identificar el trabajo.
+Revisar los archivos modificados:
 
-## 6. Guardar y subir cambios
+    git status --short
+    git diff
 
-Después de modificar o crear archivos:
+Añadir los archivos de la tarea, crear el commit y publicar la rama:
 
-```bash
-git status
-git add ruta/del/archivo
-git commit -m "Descripción del cambio"
-git push -u origin feature/nombre-tarea
-```
+    git add <archivos>
+    git diff --cached --check
+    git commit -m "tipo: descripción del cambio"
+    git push -u origin feature/nombre-de-la-tarea
 
-Se deben agregar únicamente los archivos relacionados con la tarea.
+Después, abrir un pull request desde la rama de trabajo hacia main.
+No integrar cambios con comprobaciones fallidas.
 
-## 7. Crear un Pull Request
+## 5. Recuperar trabajo de otra persona
 
-1. Abrir el repositorio en GitHub.
-2. Seleccionar la opción para crear un Pull Request.
-3. Elegir la rama de trabajo como origen y `main` como destino.
-4. Describir los cambios realizados.
-5. Verificar que las validaciones automáticas finalicen correctamente.
-6. Revisar e integrar los cambios cuando estén aprobados.
+Una vez que el pull request se integre en main:
 
-No se deben incorporar directamente cambios experimentales a `main`.
+    git switch main
+    git pull origin main
 
-## 8. Mantener el trabajo actualizado
+Esto descarga los archivos; por sí solo no modifica la configuración
+del sistema operativo.
 
-Antes de iniciar otra tarea, actualizar `main`:
+## 6. Mecanismo de despliegue
 
-```bash
-git switch main
-git pull origin main
-```
+El instalador está en:
 
-Después, crear una nueva rama para el siguiente cambio.
+    scripts/aplicar_configuracion.sh
 
-## 9. Organización de archivos
+Los módulos futuros se guardarán en:
 
-- `usuarios-sudo/`: actividades relacionadas con usuarios y permisos sudo.
-- `jail/`: documentación y archivos relacionados con el entorno restringido.
-- `apparmor/`: documentación y perfiles de AppArmor.
-- `ataques/`: documentación de las pruebas de ataque autorizadas.
-- `fail2ban/`: configuración y documentación de Fail2ban.
-- `clamav/`: documentación y pruebas de ClamAV.
-- `logwatch/`: documentación y configuración de Logwatch.
-- `pruebas/`: comprobaciones auxiliares.
-- `scripts/`: scripts generales del proyecto.
-- `configuracion/`: configuración general del proyecto.
-- `documentacion/`: manuales y documentación técnica.
+    despliegue/modulos/
 
-## 10. Seguridad y buenas prácticas
+Cada módulo deberá admitir:
 
-- No subir contraseñas, tokens, claves privadas ni credenciales.
-- No subir máquinas virtuales completas ni archivos `.qcow2`.
-- No subir registros que contengan información sensible.
-- Revisar los cambios antes de confirmarlos.
-- Utilizar Pull Requests para integrar el trabajo.
-- Ejecutar las validaciones automáticas antes de integrar cambios.
+    --check
+    --dry-run
+    --apply
 
-## 11. Validación automática
+Contrato de los módulos:
+- --check comprueba requisitos sin cambiar el sistema.
+- --dry-run muestra las acciones previstas sin cambiar el sistema.
+- --apply aplica los cambios.
+- Los módulos deben ser idempotentes siempre que sea posible.
+- Las reglas de sudoers deben validarse con visudo antes de instalarlas.
+- Los errores deben detener el despliegue y documentar posibles cambios
+  parciales y cómo recuperarse.
 
-GitHub Actions ejecuta las siguientes comprobaciones en los cambios
-dirigidos a la rama `main` mediante los eventos configurados:
+Cuando existan módulos revisados y aprobados:
 
-- Comprueba la sintaxis de los scripts Bash.
-- Valida la sintaxis de `configuracion/proyecto.conf`.
-- Comprueba que existan los directorios esenciales del proyecto.
-- Analiza los scripts Bash con ShellCheck.
+    bash scripts/aplicar_configuracion.sh --check
+    bash scripts/aplicar_configuracion.sh --dry-run
+    sudo ./scripts/aplicar_configuracion.sh --apply
 
-La rama `main` está protegida: los cambios deben integrarse mediante
-Pull Requests y la comprobación obligatoria `validar-bash` debe pasar.
+No ejecutar --apply mientras no existan módulos revisados y probados.
 
-Una validación correcta no sustituye las pruebas prácticas de seguridad
-ni demuestra por sí sola que una configuración sea segura.
+## 7. Seguridad
+
+- No subir contraseñas, tokens, claves privadas ni otros secretos.
+- No guardar copias de archivos sensibles del sistema en el repositorio.
+- Los cambios se revisan mediante pull request.
+- No asumir que una prueba de sintaxis demuestra que una configuración
+  funciona en Ubuntu; hay que probarla en una VM.
