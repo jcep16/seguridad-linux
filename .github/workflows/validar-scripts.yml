@@ -3,7 +3,7 @@ name: Validar proyecto Seguridad 1
 
 on:
   push:
-    branches: [main]
+    branches: ["**"]
   pull_request:
     branches: [main]
 

@@ -5,32 +5,32 @@ set -Eeuo pipefail
 ROOT="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 MODULOS="$ROOT/despliegue/modulos"
 
-MODO=""
-
-for argumento in "$@"; do
-    case "$argumento" in
-        --check) MODO="check" ;;
-        --dry-run) MODO="dry-run" ;;
-        --apply) MODO="apply" ;;
-        *)
-            echo "[ERROR] Opción desconocida: $argumento"
-            echo "Uso: $0 [--check|--dry-run|--apply]"
-            exit 2
-            ;;
-    esac
-done
-
-if [[ -z "$MODO" ]]; then
+uso() {
     echo "Uso: $0 [--check|--dry-run|--apply]"
+}
+
+if [[ "$#" -ne 1 ]]; then
+    uso
     exit 2
 fi
+
+case "$1" in
+    --check) MODO="check" ;;
+    --dry-run) MODO="dry-run" ;;
+    --apply) MODO="apply" ;;
+    *)
+        echo "[ERROR] Opción desconocida: $1"
+        uso
+        exit 2
+        ;;
+esac
 
 echo "=== Despliegue de Seguridad 1 ==="
 echo "Repositorio: $ROOT"
 echo
 
 if [[ ! -d "$MODULOS" ]]; then
-    echo "[ERROR] No existe el directorio de módulos."
+    echo "[ERROR] No existe el directorio de módulos: $MODULOS"
     exit 1
 fi
 
@@ -39,59 +39,101 @@ scripts=("$MODULOS"/*.sh)
 
 if (( ${#scripts[@]} == 0 )); then
     if [[ "$MODO" == "apply" ]]; then
-        echo "[ERROR] No hay módulos de configuración que aplicar."
+        echo "[ERROR] No hay configuraciones que aplicar."
         exit 1
     fi
 
-    echo "[INFO] No hay módulos de configuración implementados."
+    echo "[INFO] Todavía no hay módulos de configuración."
     echo "No se modificó el sistema."
     exit 0
 fi
 
-echo "=== Validación de módulos ==="
+echo "=== Validación de sintaxis ==="
 
 for script in "${scripts[@]}"; do
     echo "Validando: ${script##*/}"
-    bash -n "$script"
+
+    if ! bash -n "$script"; then
+        echo "[ERROR] Sintaxis inválida: ${script##*/}"
+        exit 1
+    fi
 done
 
-echo
-echo "Módulos encontrados: ${#scripts[@]}"
+case "$MODO" in
+    check)
+        echo
+        echo "=== Comprobación de módulos ==="
 
-if [[ "$MODO" == "check" ]]; then
-    echo "[OK] Los módulos tienen sintaxis Bash válida."
-    echo "No se modificó el sistema."
-    exit 0
-fi
+        for script in "${scripts[@]}"; do
+            echo "--- ${script##*/} ---"
 
-if [[ "$MODO" == "dry-run" ]]; then
-    echo "[INFO] Simulación: se ejecutarían estos módulos:"
-    printf ' - %s\n' "${scripts[@]##*/}"
-    echo "No se modificó el sistema."
-    exit 0
-fi
+            if ! bash "$script" --check; then
+                echo "[ERROR] Falló la comprobación de ${script##*/}"
+                exit 1
+            fi
+        done
 
-if [[ "$EUID" -ne 0 ]]; then
-    echo "[ERROR] Ejecuta con sudo: sudo $0 --apply"
-    exit 1
-fi
+        echo "[OK] Comprobaciones finalizadas."
+        ;;
 
-echo
-echo "ATENCIÓN: se aplicarán cambios al sistema operativo."
-read -r -p "¿Continuar? Escribe APLICAR: " respuesta
+    dry-run)
+        echo
+        echo "=== Simulación de módulos ==="
 
-if [[ "$respuesta" != "APLICAR" ]]; then
-    echo "Operación cancelada."
-    exit 0
-fi
+        for script in "${scripts[@]}"; do
+            echo "--- ${script##*/} ---"
 
-for script in "${scripts[@]}"; do
-    echo
-    echo "=== Aplicando ${script##*/} ==="
-    bash "$script"
-    echo "[OK] Finalizado: ${script##*/}"
-done
+            if ! bash "$script" --dry-run; then
+                echo "[ERROR] Falló la simulación de ${script##*/}"
+                exit 1
+            fi
+        done
 
-echo
-echo "Despliegue finalizado."
-echo "Ejecuta las comprobaciones correspondientes a cada módulo."
+        echo "[OK] Simulación finalizada."
+        ;;
+
+    apply)
+        if [[ "$EUID" -ne 0 ]]; then
+            echo "[ERROR] Ejecuta con privilegios administrativos:"
+            echo "sudo $0 --apply"
+            exit 1
+        fi
+
+        echo
+        echo "=== Comprobaciones previas ==="
+
+        for script in "${scripts[@]}"; do
+            echo "--- ${script##*/} ---"
+
+            if ! bash "$script" --check; then
+                echo "[ERROR] Se cancela la aplicación."
+                echo "Falló la comprobación de ${script##*/}"
+                exit 1
+            fi
+        done
+
+        echo
+        echo "Se aplicarán las configuraciones de los módulos."
+        read -r -p "Para continuar, escribe APLICAR: " respuesta
+
+        if [[ "$respuesta" != "APLICAR" ]]; then
+            echo "Operación cancelada."
+            exit 0
+        fi
+
+        for script in "${scripts[@]}"; do
+            echo
+            echo "=== Aplicando ${script##*/} ==="
+
+            if ! bash "$script" --apply; then
+                echo "[ERROR] Falló ${script##*/}."
+                echo "Puede haber cambios previos aplicados."
+                echo "Revisa el estado del sistema antes de reintentar."
+                exit 1
+            fi
+        done
+
+        echo
+        echo "[OK] Despliegue finalizado."
+        ;;
+esac
