@@ -1,14 +1,12 @@
 #!/usr/bin/env bash
-
 set -Eeuo pipefail
 
 MODO="${1:-}"
 
 case "$MODO" in
-    --check|--dry-run|--apply)
-        ;;
+    --check|--dry-run|--apply) ;;
     *)
-        echo "Uso: $0 [--check|--dry-run|--apply]"
+        echo "Uso: $0 [--check|--dry-run|--apply]" >&2
         exit 2
         ;;
 esac
@@ -21,27 +19,27 @@ fi
 case "$MODO" in
     --check)
         echo "=== Validación de sudoers ==="
-        if visudo -c; then
-            echo "[OK] La sintaxis de sudoers es válida."
+        if [[ $EUID -eq 0 ]]; then
+            visudo -c
         else
-            echo "[ERROR] Se detectaron errores en sudoers."
-            exit 1
+            sudo visudo -c
         fi
+        echo "[OK] La sintaxis de sudoers es válida."
         ;;
 
     --dry-run)
-        echo "[SIMULACIÓN] Se ejecutaría visudo -c."
+        echo "[SIMULACIÓN] Se comprobaría la sintaxis con visudo -c."
         echo "No se modificará la configuración."
         ;;
 
     --apply)
         echo "=== Validación final de sudoers ==="
-        if visudo -c; then
-            echo "[OK] La configuración es válida."
-            echo "Este ejercicio no modifica archivos de sudoers."
+        if [[ $EUID -eq 0 ]]; then
+            visudo -c
         else
-            echo "[ERROR] Se detectaron errores en sudoers."
-            exit 1
+            sudo visudo -c
         fi
+        echo "[OK] La configuración es válida."
+        echo "Este ejercicio no modifica archivos de sudoers."
         ;;
 esac
