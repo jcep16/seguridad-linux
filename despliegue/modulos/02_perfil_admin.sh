@@ -16,40 +16,50 @@ case "$MODO" in
 esac
 
 if [[ ! -f "$ORIGEN" ]]; then
-    echo "[ERROR] No existe el script de gestión de paquetes."
+    echo "[ERROR] No existe el script de gestión de paquetes: $ORIGEN"
     exit 1
 fi
 
-if ! bash -n "$ORIGEN"; then
-    echo "[ERROR] Sintaxis inválida en el script de paquetes."
-    exit 1
-fi
-
-if ! id admin_lab >/dev/null 2>&1; then
-    echo "[ERROR] Debes crear el usuario admin_lab antes."
-    exit 1
-fi
+bash -n "$ORIGEN"
 
 case "$MODO" in
     --check)
-        echo "[OK] Script válido y usuario admin_lab existente."
-        if [[ -f "$DESTINO" && -f "$REGLA" ]]; then
-            echo "[INFO] Ya hay una instalación previa."
+        command -v visudo >/dev/null
+        command -v useradd >/dev/null
+        command -v passwd >/dev/null
+        echo "[OK] Script y herramientas disponibles."
+
+        if id admin_lab >/dev/null 2>&1; then
+            echo "[OK] El usuario admin_lab ya existe."
         else
-            echo "[INFO] Falta instalar el perfil."
+            echo "[INFO] Se crearía admin_lab al aplicar."
+        fi
+
+        if [[ -f "$DESTINO" && -f "$REGLA" ]]; then
+            echo "[INFO] Ya hay una instalación previa del perfil."
+        else
+            echo "[INFO] Falta instalar parte o todo el perfil."
         fi
         ;;
 
     --dry-run)
-        echo "[SIMULACIÓN] Se instalaría el script en $DESTINO"
-        echo "[SIMULACIÓN] Se configuraría $REGLA"
-        echo "No se modificó el sistema."
+        echo "[SIMULACIÓN] Se crearía admin_lab si no existe."
+        echo "[SIMULACIÓN] Se solicitaría definir una contraseña para la cuenta nueva."
+        echo "[SIMULACIÓN] Se instalaría $DESTINO."
+        echo "[SIMULACIÓN] Se configuraría $REGLA."
+        echo "[SIMULACIÓN] No se modificará el sistema."
         ;;
 
     --apply)
-        if [[ "$EUID" -ne 0 ]]; then
-            echo "[ERROR] Ejecuta el despliegue con sudo."
+        if [[ $EUID -ne 0 ]]; then
+            echo "[ERROR] Ejecuta el despliegue con sudo." >&2
             exit 1
+        fi
+
+        if ! id admin_lab >/dev/null 2>&1; then
+            useradd --create-home --shell /bin/bash admin_lab
+            echo "[INFO] Define la contraseña de admin_lab."
+            passwd admin_lab
         fi
 
         TEMP="$(mktemp)"
@@ -62,19 +72,12 @@ case "$MODO" in
         chown root:root "$TEMP"
         chmod 0440 "$TEMP"
 
-        if ! visudo -c -f "$TEMP"; then
-            echo "[ERROR] La regla candidata no es válida."
-            exit 1
-        fi
+        visudo -c -f "$TEMP"
 
         install -o root -g root -m 0755 "$ORIGEN" "$DESTINO"
         install -o root -g root -m 0440 "$TEMP" "$REGLA"
 
-        if ! visudo -c; then
-            echo "[ERROR] La configuración global de sudoers no es válida."
-            exit 1
-        fi
-
+        visudo -c
         echo "[OK] Perfil admin_lab instalado."
         ;;
 esac

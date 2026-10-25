@@ -4,29 +4,38 @@ set -Eeuo pipefail
 USUARIO="usuario_normal_lab"
 
 case "${1:-}" in
+    --check|--dry-run|--apply) ;;
+    *)
+        echo "Uso: $0 {--check|--dry-run|--apply}" >&2
+        exit 2
+        ;;
+esac
+
+case "$1" in
     --check)
         command -v useradd >/dev/null
-        command -v usermod >/dev/null
-        command -v id >/dev/null
+        command -v gpasswd >/dev/null
+        command -v getent >/dev/null
+        command -v visudo >/dev/null
         echo "[OK] Herramientas disponibles."
 
         if id "$USUARIO" >/dev/null 2>&1; then
             echo "[OK] El usuario $USUARIO ya existe."
         else
-            echo "[INFO] Se crearía el usuario $USUARIO al aplicar."
+            echo "[INFO] Se crearía $USUARIO al aplicar."
         fi
         ;;
 
     --dry-run)
         echo "[SIMULACIÓN] Se crearía $USUARIO si no existe."
-        echo "[SIMULACIÓN] Se comprobaría que no pertenezca al grupo sudo."
+        echo "[SIMULACIÓN] Se comprobaría su pertenencia al grupo sudo."
         echo "[SIMULACIÓN] No se modificarán los permisos de /etc/shadow."
         echo "No se modificará el sistema."
         ;;
 
     --apply)
         if [[ $EUID -ne 0 ]]; then
-            echo "[ERROR] Ejecuta el despliegue con sudo."
+            echo "[ERROR] Ejecuta el despliegue con sudo." >&2
             exit 1
         fi
 
@@ -38,22 +47,17 @@ case "${1:-}" in
 
         if getent group sudo | grep -qw "$USUARIO"; then
             gpasswd -d "$USUARIO" sudo
-            echo "[OK] Usuario eliminado del grupo sudo."
-        else
-            echo "[OK] El usuario no pertenece al grupo sudo."
         fi
 
-        if sudo -l -U "$USUARIO" >/dev/null 2>&1; then
-            echo "[ERROR] El usuario todavía tiene permisos sudo."
+        if getent group sudo | grep -qw "$USUARIO"; then
+            echo "[ERROR] El usuario sigue perteneciendo al grupo sudo." >&2
             exit 1
         fi
 
-        echo "[OK] El usuario no está autorizado para utilizar sudo."
-        echo "[OK] Perfil de usuario normal aplicado."
-        ;;
+        visudo -c
 
-    *)
-        echo "Uso: $0 {--check|--dry-run|--apply}" >&2
-        exit 2
+        echo "[OK] $USUARIO no pertenece al grupo sudo."
+        echo "[INFO] Esta comprobación no descarta reglas sudoers adicionales asignadas directamente al usuario."
+        echo "[OK] Perfil de usuario normal aplicado."
         ;;
 esac
