@@ -19,7 +19,7 @@ crear_scripts() {
 
 crear_regla() {
     printf '%s\n' \
-        'remoto_lab ALL=(root) /usr/local/sbin/reiniciar_ssh_lab, /usr/local/sbin/renovar_red_lab' \
+        'remoto_lab ALL=(root) NOPASSWD: /usr/local/sbin/reiniciar_ssh_lab, /usr/local/sbin/renovar_red_lab' \
         > "$TEMP"
 
     chown root:root "$TEMP"
